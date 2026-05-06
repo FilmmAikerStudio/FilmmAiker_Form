@@ -1,23 +1,36 @@
-import { Cormorant_Garamond, Inter, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
+import { JetBrains_Mono } from "next/font/google";
 
-// next/font/google self-hostea las fuentes en build time:
-// los archivos .woff2 se sirven desde nuestro propio dominio,
-// no hay request a fonts.googleapis.com en runtime.
+// Self-hosted FilmmAiker fonts: hybrid identity con paleta AltafuIA + tipos del estudio.
+// Los archivos viven en /public/fonts y los sirve nuestro propio dominio.
 
-export const fontDisplay = Cormorant_Garamond({
-  subsets: ["latin", "latin-ext"],
-  weight: ["500", "600", "700"],
+export const fontDisplay = localFont({
+  src: [
+    {
+      path: "../public/fonts/soria-font.ttf",
+      weight: "400 900",
+      style: "normal",
+    },
+  ],
   variable: "--font-display",
-  display: "swap",
+  display: "block",
+  fallback: ["Cormorant Garamond", "Georgia", "serif"],
 });
 
-export const fontSans = Inter({
-  subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600"],
+export const fontSans = localFont({
+  src: [
+    {
+      path: "../public/fonts/Vercetti-Regular.woff",
+      weight: "400 900",
+      style: "normal",
+    },
+  ],
   variable: "--font-sans",
-  display: "swap",
+  display: "block",
+  fallback: ["Barlow Condensed", "Inter", "system-ui", "sans-serif"],
 });
 
+// Mono se queda con next/font/google (self-hosting en build time).
 export const fontMono = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500"],
