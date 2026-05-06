@@ -2,63 +2,416 @@
 @tailwind components;
 @tailwind utilities;
 
+/* AltafuIA · Auditoría — paleta + sistema de tipo
+   Identidad híbrida: paleta AltafuIA + tipografías FilmmAiker (Soria/Vercetti)
+   Adaptado del prototipo Claude Design (filmmaiker-studio-form). */
+
 :root {
   --green-light: #b7e985;
   --green-mid: #4caf7e;
   --green-deep: #1f8b4c;
   --green-dark: #0f4a2a;
-
-  --bg-black: #000000;
-  --bg-deep: #0a0a0a;
-  --ink-white: #ffffff;
-  --ink-soft: #c7c7c7;
-  --ink-mid: #6b6b6b;
-
   --accent-rose: #e8bfb8;
   --accent-mint: #c7e8dd;
   --alert-red: #c44d4d;
+
+  --bg-black: #050505;
+  --bg-deep: #0a0a0a;
+  --bg-card: #0c0c0c;
+  --bg-elev: #141414;
+
+  --ink-white: #ffffff;
+  --ink-soft: #c7c7c7;
+  --ink-mid: #6b6b6b;
+  --ink-faint: rgba(255, 255, 255, 0.3);
+
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.18);
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 html,
 body {
-  background-color: var(--bg-black);
+  margin: 0;
+  padding: 0;
+  background: var(--bg-black);
   color: var(--ink-white);
+  font-family: var(--font-sans), "Barlow Condensed", system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-}
-
-body {
-  font-family: var(--font-sans), system-ui, sans-serif;
+  overflow-x: hidden;
 }
 
 ::selection {
-  background: var(--green-mid);
+  background: var(--green-light);
   color: var(--bg-black);
 }
 
-@layer base {
-  h1,
-  h2,
-  h3 {
-    font-family: var(--font-display), Georgia, serif;
-    font-weight: 600;
-    letter-spacing: -0.01em;
+button {
+  font-family: inherit;
+  cursor: pointer;
+}
+
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+/* ─── Tipo · etiquetas ────────────────────────────────────────── */
+.label {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.label-sm {
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--ink-faint);
+}
+
+.serif {
+  font-family: var(--font-display);
+}
+.serif-italic {
+  font-family: var(--font-display);
+  font-style: italic;
+}
+
+/* ─── Block header (deck-style) ───────────────────────────────── */
+.block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.45em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(5, 5, 5, 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.block-header .block-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.block-header .block-right {
+  font-feature-settings: "tnum";
+}
+
+/* ─── Botones ─────────────────────────────────────────────────── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 28px;
+  background: linear-gradient(90deg, var(--green-light), var(--green-deep));
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  transition: transform 200ms var(--ease-spring), filter 200ms;
+  position: relative;
+  overflow: hidden;
+}
+.btn-primary:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+.btn-primary:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+  filter: grayscale(0.6);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 24px;
+  background: transparent;
+  color: var(--ink-white);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  transition: background 200ms, border-color 200ms, color 200ms;
+}
+.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: var(--green-mid);
+  color: var(--green-light);
+}
+
+.btn-ghost {
+  background: transparent;
+  border: none;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  padding: 10px 14px;
+  transition: color 200ms;
+}
+.btn-ghost:hover {
+  color: var(--green-light);
+}
+
+/* ─── Inputs ──────────────────────────────────────────────────── */
+.input {
+  width: 100%;
+  padding: 18px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--ink-white);
+  font-size: 16px;
+  font-family: var(--font-sans);
+  transition: border-color 200ms;
+}
+.input:focus {
+  border-color: var(--green-mid);
+}
+.input::placeholder {
+  color: var(--ink-mid);
+}
+
+/* ─── Cards ───────────────────────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.card-interactive {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 22px;
+  transition: border-color 200ms, background 200ms,
+    transform 200ms var(--ease-spring);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  color: inherit;
+}
+.card-interactive:hover {
+  border-color: rgba(76, 175, 126, 0.5);
+  background: rgba(76, 175, 126, 0.04);
+}
+.card-interactive.selected {
+  border-color: var(--green-mid);
+  background: rgba(76, 175, 126, 0.08);
+}
+
+/* ─── Divisores y barra de progreso ───────────────────────────── */
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 32px 0 20px;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.progress-track {
+  height: 2px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  position: relative;
+}
+.progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, var(--green-light), var(--green-deep));
+  transition: width 500ms var(--ease-out);
+}
+
+/* ─── Animaciones ─────────────────────────────────────────────── */
+.screen-enter {
+  animation: screenEnter 500ms var(--ease-out) both;
+}
+@keyframes screenEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 600ms var(--ease-out) both;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Caret de streaming para la auditoría LLM */
+.caret {
+  display: inline-block;
+  width: 8px;
+  height: 1em;
+  vertical-align: text-bottom;
+  background: var(--green-light);
+  margin-left: 2px;
+  animation: caret 0.9s steps(2) infinite;
+}
+@keyframes caret {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  51%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ─── Overlays (PDF, share card) ──────────────────────────────── */
+.overlay-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 7500;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 200ms var(--ease-out) both;
+}
+.overlay-card {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: screenEnter 360ms var(--ease-out) both;
+}
+
+/* ─── Toggle de idioma flotante ───────────────────────────────── */
+.lang-toggle {
+  position: fixed;
+  top: 18px;
+  right: 18px;
+  z-index: 8000;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(10, 10, 10, 0.7);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--ink-faint);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  transition: border-color 200ms;
+}
+.lang-toggle:hover {
+  border-color: var(--green-mid);
+}
+.lang-toggle .active {
+  color: var(--green-light);
+}
+.lang-toggle .sep {
+  color: var(--ink-mid);
+}
+
+/* ─── Grano de cine ───────────────────────────────────────────── */
+.grain-overlay {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  opacity: var(--grain-opacity, 0.04);
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.7 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Scroll fino */
+.scroll-area {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+.scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+.scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
-  }
-
-  .grain::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    opacity: 0.05;
-    z-index: 1;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 }
