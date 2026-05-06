@@ -60,6 +60,10 @@ export function EmailGateScreen() {
           );
           return;
         }
+        const data = await res.json().catch(() => ({})) as { lead?: { id?: string } };
+        if (data?.lead?.id) {
+          localStorage.setItem("altafuia_lead_id", data.lead.id);
+        }
         router.push("/auditoria/perfil");
       } catch {
         setError(
