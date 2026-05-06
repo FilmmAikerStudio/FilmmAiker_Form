@@ -67,7 +67,7 @@ export default function PerfilPage() {
               <button
                 key={kind}
                 type="button"
-                onClick={() => alert("Sprint 2 · cuestionario en construcción.")}
+                onClick={() => router.push(`/auditoria/quiz/${kind}`)}
                 className="card-interactive flex min-h-[320px] flex-col justify-between"
                 style={{ padding: "clamp(28px, 4vw, 40px)" }}
               >
