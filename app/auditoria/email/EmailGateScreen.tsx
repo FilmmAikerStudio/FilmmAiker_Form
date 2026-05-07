@@ -37,41 +37,51 @@ export function EmailGateScreen() {
     if (!valid) return;
 
     startTransition(async () => {
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanName = name.trim();
+
+      // Guardamos el lead local SIEMPRE, así el funnel sigue aunque el API falle.
+      try {
+        localStorage.setItem("altafuia_lead_email", cleanEmail);
+        localStorage.setItem("altafuia_lead_name", cleanName);
+      } catch {}
+
       try {
         const res = await fetch("/api/leads", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            email: email.trim().toLowerCase(),
-            name: name.trim(),
+            email: cleanEmail,
+            name: cleanName,
             source: source || null,
             utm_source: params.get("utm_source"),
             utm_medium: params.get("utm_medium"),
             utm_campaign: params.get("utm_campaign"),
           }),
         });
-        if (!res.ok) {
+        if (res.ok) {
+          const data = (await res.json().catch(() => ({}))) as {
+            lead?: { id?: string };
+          };
+          if (data?.lead?.id) {
+            try {
+              localStorage.setItem("altafuia_lead_id", data.lead.id);
+            } catch {}
+          }
+        } else if (res.status === 400) {
+          // Solo bloqueamos si el server rechaza la validación (email/nombre malo).
           const payload = await res.json().catch(() => ({}));
           setError(
             payload.error ??
-              (lang === "es"
-                ? "No pudimos guardarte. Probá de nuevo."
-                : "We couldn't save you. Try again."),
+              (lang === "es" ? "Datos inválidos." : "Invalid input."),
           );
           return;
         }
-        const data = await res.json().catch(() => ({})) as { lead?: { id?: string } };
-        if (data?.lead?.id) {
-          localStorage.setItem("altafuia_lead_id", data.lead.id);
-        }
-        router.push("/auditoria/perfil");
+        // Cualquier otro error (500, red caída, env vars faltantes) → seguimos.
       } catch {
-        setError(
-          lang === "es"
-            ? "Falló la red. Probá de nuevo."
-            : "Network error. Try again.",
-        );
+        // Network down o API ausente → seguimos igual, la auditoría es local.
       }
+      router.push("/auditoria/perfil");
     });
   }
 
