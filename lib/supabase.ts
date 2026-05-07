@@ -14,8 +14,30 @@ export function getServerSupabase(): SupabaseClient {
       "Faltan SUPABASE_URL o SUPABASE_SERVICE_ROLE_KEY en el entorno.",
     );
   }
+  const customFetch = (requestUrl: RequestInfo | URL, options?: RequestInit) => {
+    const urlStr = requestUrl.toString();
+    try {
+      const parsedUrl = new URL(urlStr);
+      if (parsedUrl.hostname.includes("traefik.me")) {
+        const originalHostname = parsedUrl.hostname;
+        parsedUrl.hostname = "46.202.171.141";
+        
+        options = options || {};
+        options.headers = {
+          ...options.headers,
+          "Host": originalHostname,
+        };
+        return fetch(parsedUrl.toString(), options);
+      }
+    } catch (e) {
+      // Ignorar errores de parseo
+    }
+    return fetch(requestUrl, options);
+  };
+
   serverClient = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
+    global: { fetch: customFetch },
   });
   return serverClient;
 }
