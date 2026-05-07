@@ -453,23 +453,23 @@ export function ResultadoScreen() {
 
           <div className="flex flex-wrap justify-center gap-3">
             <a
-              href="https://altafuia.com/community"
+              href="https://filmmaikerstudio.notion.site/altaiff"
               target="_blank"
               rel="noopener noreferrer"
               className="btn-primary"
             >
-              {lang === "es" ? "Entrar a The Human Layer™" : "Enter The Human Layer™"}
+              {lang === "es" ? "Descargá el recurso" : "Get the resource"}
               <svg width={14} height={12} viewBox="0 0 14 12" fill="none" stroke="currentColor" strokeWidth={2}>
                 <path d="M1 6h11m0 0L8 1m4 5l-4 5" />
               </svg>
             </a>
             <a
-              href="https://cal.com/sebas"
+              href="https://www.linkedin.com/in/filmmaiking/"
               target="_blank"
               rel="noopener noreferrer"
               className="btn-secondary"
             >
-              {lang === "es" ? "Sesión 1 a 1 con Sebas" : "Book 1-on-1 with Sebas"}
+              {lang === "es" ? "Conectá con Sebas en LinkedIn" : "Connect with Sebas on LinkedIn"}
             </a>
           </div>
         </div>

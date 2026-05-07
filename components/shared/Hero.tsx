@@ -5,7 +5,6 @@ import { useLang } from "@/lib/lang-context";
 import { copy, t } from "@/lib/copy";
 import { BlockHeader } from "@/components/shared/BlockHeader";
 import { GlowBlob } from "@/components/shared/GlowBlob";
-import { FakeQR } from "@/components/shared/FakeQR";
 
 export function Hero() {
   const { lang } = useLang();
@@ -85,40 +84,23 @@ export function Hero() {
           </p>
         </div>
 
-        {/* Footer band: CTA + QR */}
-        <div
-          className="grid items-end"
-          style={{
-            gridTemplateColumns: "minmax(0, 1fr) auto",
-            gap: "clamp(24px, 5vw, 64px)",
-          }}
-        >
-          <div>
-            <Link
-              href="/auditoria/email"
-              className="btn-primary"
-              style={{ fontSize: 14, padding: "22px 36px" }}
-            >
-              <span>{t(copy.landing.cta, lang)}</span>
-              <svg width={18} height={14} viewBox="0 0 18 14" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path d="M1 7h16m0 0L11 1m6 6l-6 6" />
-              </svg>
-            </Link>
-            <div
-              className="mt-4 font-sans font-bold uppercase text-ink-faint"
-              style={{ fontSize: 11, letterSpacing: "0.25em" }}
-            >
-              {t(copy.landing.foot, lang)}
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-3 text-right">
-            <div
-              className="rounded-lg border border-line bg-white/[0.04] p-3.5"
-              aria-hidden
-            >
-              <FakeQR size={56} color="#fff" />
-            </div>
-            <div className="label-sm">{t(copy.landing.qrLabel, lang)}</div>
+        {/* Footer band: CTA */}
+        <div>
+          <Link
+            href="/auditoria/email"
+            className="btn-primary"
+            style={{ fontSize: 14, padding: "22px 36px" }}
+          >
+            <span>{t(copy.landing.cta, lang)}</span>
+            <svg width={18} height={14} viewBox="0 0 18 14" fill="none" stroke="currentColor" strokeWidth={2}>
+              <path d="M1 7h16m0 0L11 1m6 6l-6 6" />
+            </svg>
+          </Link>
+          <div
+            className="mt-4 font-sans font-bold uppercase text-ink-faint"
+            style={{ fontSize: 11, letterSpacing: "0.25em" }}
+          >
+            {t(copy.landing.foot, lang)}
           </div>
         </div>
 
