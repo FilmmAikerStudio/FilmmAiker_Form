@@ -85,6 +85,16 @@ passwd  # nuevo root password
 API key de Hostinger: regenerar en panel de Hostinger.  
 JWT secret de Supabase: si querés rotar también, requiere regenerar ANON_KEY y SERVICE_ROLE_KEY (Dokploy → Supabase env vars), y actualizar la app.
 
+## 4.bis · Antigravity / cualquier deploy sin env vars
+
+El funnel está diseñado para ser **resiliente**:
+
+- Si faltan `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` en el entorno, o si la migración SQL no se aplicó, las APIs `/api/leads` y `/api/quiz` devuelven igual `200` y dejan que el funnel avance.
+- La auditoría se **computa en el cliente** (`lib/scoring.ts`), así que el resultado es siempre visible aunque Supabase esté down.
+- El cliente guarda `altafuia_lead_email`, `altafuia_lead_name` y `altafuia_result` en `localStorage` para sostener el flujo sin backend.
+
+Para que **además** se persistan los leads y respuestas, configurar las env vars en el panel del deploy (Antigravity / Dokploy / etc.) y aplicar la migración (sección 1).
+
 ## 5 · Pendientes Sprint 3+
 
 - LLM auditor (Anthropic) → reemplaza templates estáticos por audit personalizado en streaming

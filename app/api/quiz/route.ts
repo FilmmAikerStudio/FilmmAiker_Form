@@ -55,7 +55,8 @@ export async function POST(request: Request) {
           .eq("id", lead_id);
       } catch (err) {
         // Non-blocking: quiz result is still returned even if Supabase fails
-        console.error("[quiz/individual] persist failed", err);
+        // o si faltan env vars en la deploy.
+        console.error("[quiz/individual] persist skipped", err);
       }
     }
 
@@ -101,7 +102,8 @@ export async function POST(request: Request) {
           .update({ profile_type: "business", status: "quiz_completed" })
           .eq("id", lead_id);
       } catch (err) {
-        console.error("[quiz/business] persist failed", err);
+        // Non-blocking: o env vars faltantes, o tabla no migrada.
+        console.error("[quiz/business] persist skipped", err);
       }
     }
 
