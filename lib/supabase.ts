@@ -20,7 +20,7 @@ export function getServerSupabase(): SupabaseClient {
       const parsedUrl = new URL(urlStr);
       if (parsedUrl.hostname.includes("traefik.me")) {
         const originalHostname = parsedUrl.hostname;
-        parsedUrl.hostname = "46.202.171.141";
+        parsedUrl.hostname = "172.17.0.1";
         
         options = options || {};
         options.headers = {
