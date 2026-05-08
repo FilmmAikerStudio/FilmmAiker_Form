@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useLang } from "@/lib/lang-context";
 import { copy, t } from "@/lib/copy";
 import { BlockHeader } from "@/components/shared/BlockHeader";
@@ -8,9 +7,7 @@ import { GlowBlob } from "@/components/shared/GlowBlob";
 import { BackArrow } from "@/components/shared/BackArrow";
 
 // Stub Sprint 2 — bifurcación persona vs empresa.
-// Deja la estética coherente con landing y email gate hasta que llegue el flow completo.
 export default function PerfilPage() {
-  const router = useRouter();
   const { lang } = useLang();
 
   return (
@@ -25,7 +22,7 @@ export default function PerfilPage() {
         style={{ padding: "clamp(28px, 5vw, 56px) clamp(24px, 5vw, 64px)" }}
       >
         <div className="mb-6">
-          <BackArrow onClick={() => router.push("/auditoria/email")} />
+          <BackArrow onClick={() => window.location.assign("/auditoria/email")} />
         </div>
 
         <div
@@ -67,7 +64,7 @@ export default function PerfilPage() {
               <button
                 key={kind}
                 type="button"
-                onClick={() => router.push(`/auditoria/quiz/${kind}`)}
+                onClick={() => window.location.assign(`/auditoria/quiz/${kind}`)}
                 className="card-interactive flex min-h-[320px] flex-col justify-between"
                 style={{ padding: "clamp(28px, 4vw, 40px)" }}
               >

@@ -102,19 +102,7 @@ export function QuizScreen({ type }: Props) {
         q6_goal: (answers[5] as number) ?? 1,
       };
       payload = { type: "individual", b2c: scoreB2C(b2cAnswers), lang };
-      // Persist to Supabase non-blocking
-      const leadId = localStorage.getItem("altafuia_lead_id");
-      fetch("/api/quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lead_id: leadId,
-          type: "individual",
-          answers: { q1: b2cAnswers.q1, q2: b2cAnswers.q2, q3: b2cAnswers.q3, q4: b2cAnswers.q4, q5: b2cAnswers.q5, q6_goal: b2cAnswers.q6_goal },
-        }),
-      }).catch(() => {});
     } else {
-      // Map scored questions (q3=index2, q4=index3)
       const q3opts = QB2B[2].opts;
       const q4opts = QB2B[3].opts;
       const q3val = answers[2] as string;
@@ -133,23 +121,12 @@ export function QuizScreen({ type }: Props) {
         q8: (answers[7] as string) ?? "",
       };
       payload = { type: "business", b2b: scoreB2B(b2bAnswers), lang };
-      // Persist to Supabase non-blocking
-      const leadId = localStorage.getItem("altafuia_lead_id");
-      fetch("/api/quiz", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          lead_id: leadId,
-          type: "business",
-          answers: { q1: b2bAnswers.q1, q2: b2bAnswers.q2, q3: b2bAnswers.q3, q4: b2bAnswers.q4, q5: b2bAnswers.q5, q6: b2bAnswers.q6, q7: b2bAnswers.q7, q8: b2bAnswers.q8 },
-        }),
-      }).catch(() => {});
     }
 
-    if (typeof window !== "undefined") {
+    try {
       localStorage.setItem("altafuia_result", JSON.stringify(payload));
-    }
-    router.push("/auditoria/resultado");
+    } catch {}
+    window.location.assign("/auditoria/resultado");
   }
 
   const days = lang === "es" ? DAYS_ES : DAYS_EN;
