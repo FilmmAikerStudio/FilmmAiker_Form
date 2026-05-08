@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useLang } from "@/lib/lang-context";
 import { copy, t } from "@/lib/copy";
 import { BlockHeader } from "@/components/shared/BlockHeader";
@@ -11,7 +11,6 @@ import { BackArrow } from "@/components/shared/BackArrow";
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function EmailGateScreen() {
-  const router = useRouter();
   const params = useSearchParams();
   const { lang } = useLang();
 
@@ -37,42 +36,43 @@ export function EmailGateScreen() {
     setPending(true);
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = name.trim();
+    const utm_source = params.get("utm_source");
+    const utm_medium = params.get("utm_medium");
+    const utm_campaign = params.get("utm_campaign");
 
-    // 1. Guardar localmente — esto es lo único que importa para el funnel.
     try {
       localStorage.setItem("altafuia_lead_email", cleanEmail);
       localStorage.setItem("altafuia_lead_name", cleanName);
       if (source) localStorage.setItem("altafuia_lead_source", source);
+      if (utm_source || utm_medium || utm_campaign) {
+        localStorage.setItem(
+          "altafuia_utm",
+          JSON.stringify({ utm_source, utm_medium, utm_campaign }),
+        );
+      }
     } catch {}
 
-    // 2. Disparar el fetch en background, fire-and-forget. Nunca bloquea nav.
+    // Fire-and-forget POST a Notion via /api/lead. keepalive sobrevive
+    // la navegación y nunca bloquea router.
     try {
-      void fetch("/api/leads", {
+      void fetch("/api/lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         keepalive: true,
         body: JSON.stringify({
           email: cleanEmail,
           name: cleanName,
+          stage: "captured",
           source: source || null,
-          utm_source: params.get("utm_source"),
-          utm_medium: params.get("utm_medium"),
-          utm_campaign: params.get("utm_campaign"),
+          utm_source,
+          utm_medium,
+          utm_campaign,
         }),
-      })
-        .then((res) => res.ok ? res.json() : null)
-        .then((data) => {
-          if (data?.lead?.id) {
-            try {
-              localStorage.setItem("altafuia_lead_id", data.lead.id);
-            } catch {}
-          }
-        })
-        .catch(() => {});
+      }).catch(() => {});
     } catch {}
 
-    // 3. Navegar YA, sin esperar nada.
-    router.push("/auditoria/perfil");
+    // Navegación inmediata, full page load — imposible de bloquear.
+    window.location.assign("/auditoria/perfil");
   }
 
   return (
@@ -85,7 +85,7 @@ export function EmailGateScreen() {
         style={{ padding: "clamp(28px, 5vw, 56px) clamp(24px, 5vw, 64px)" }}
       >
         <div className="mb-6">
-          <BackArrow onClick={() => router.push("/")} label={lang === "es" ? "Atrás" : "Back"} />
+          <BackArrow onClick={() => window.location.assign("/")} label={lang === "es" ? "Atrás" : "Back"} />
         </div>
 
         <div

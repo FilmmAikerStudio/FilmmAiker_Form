@@ -12,11 +12,9 @@
     "supabase:migrate": "echo 'Aplicá las migraciones desde supabase/migrations contra tu instancia (CLI o dashboard).'"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.4",
     "next": "14.2.15",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "resend": "^4.0.0"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@types/node": "^22.7.5",
