@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useLang } from "@/lib/lang-context";
 import { copy, t } from "@/lib/copy";
@@ -20,8 +20,7 @@ export function EmailGateScreen() {
   const [source, setSource] = useState<string>("");
   const [honeypot, setHoneypot] = useState("");
   const [touched, setTouched] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [pending, setPending] = useState(false);
 
   const emailValid = EMAIL_RE.test(email);
   const nameValid = name.trim().length >= 1;
@@ -32,57 +31,48 @@ export function EmailGateScreen() {
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setTouched(true);
-    setError(null);
     if (honeypot.length > 0) return;
     if (!valid) return;
 
-    startTransition(async () => {
-      const cleanEmail = email.trim().toLowerCase();
-      const cleanName = name.trim();
+    setPending(true);
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
 
-      // Guardamos el lead local SIEMPRE, así el funnel sigue aunque el API falle.
-      try {
-        localStorage.setItem("altafuia_lead_email", cleanEmail);
-        localStorage.setItem("altafuia_lead_name", cleanName);
-      } catch {}
+    // 1. Guardar localmente — esto es lo único que importa para el funnel.
+    try {
+      localStorage.setItem("altafuia_lead_email", cleanEmail);
+      localStorage.setItem("altafuia_lead_name", cleanName);
+      if (source) localStorage.setItem("altafuia_lead_source", source);
+    } catch {}
 
-      try {
-        const res = await fetch("/api/leads", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: cleanEmail,
-            name: cleanName,
-            source: source || null,
-            utm_source: params.get("utm_source"),
-            utm_medium: params.get("utm_medium"),
-            utm_campaign: params.get("utm_campaign"),
-          }),
-        });
-        if (res.ok) {
-          const data = (await res.json().catch(() => ({}))) as {
-            lead?: { id?: string };
-          };
+    // 2. Disparar el fetch en background, fire-and-forget. Nunca bloquea nav.
+    try {
+      void fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({
+          email: cleanEmail,
+          name: cleanName,
+          source: source || null,
+          utm_source: params.get("utm_source"),
+          utm_medium: params.get("utm_medium"),
+          utm_campaign: params.get("utm_campaign"),
+        }),
+      })
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
           if (data?.lead?.id) {
             try {
               localStorage.setItem("altafuia_lead_id", data.lead.id);
             } catch {}
           }
-        } else if (res.status === 400) {
-          // Solo bloqueamos si el server rechaza la validación (email/nombre malo).
-          const payload = await res.json().catch(() => ({}));
-          setError(
-            payload.error ??
-              (lang === "es" ? "Datos inválidos." : "Invalid input."),
-          );
-          return;
-        }
-        // Cualquier otro error (500, red caída, env vars faltantes) → seguimos.
-      } catch {
-        // Network down o API ausente → seguimos igual, la auditoría es local.
-      }
-      router.push("/auditoria/perfil");
-    });
+        })
+        .catch(() => {});
+    } catch {}
+
+    // 3. Navegar YA, sin esperar nada.
+    router.push("/auditoria/perfil");
   }
 
   return (
@@ -242,20 +232,6 @@ export function EmailGateScreen() {
             aria-hidden="true"
             className="absolute left-[-9999px] h-0 w-0 opacity-0"
           />
-
-          {error ? (
-            <div
-              role="alert"
-              className="font-bold uppercase"
-              style={{
-                color: "var(--alert-red)",
-                fontSize: 11,
-                letterSpacing: "0.1em",
-              }}
-            >
-              {error}
-            </div>
-          ) : null}
 
           {/* CTA */}
           <div className="mt-2">
