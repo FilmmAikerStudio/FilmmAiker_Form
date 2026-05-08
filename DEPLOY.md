@@ -1,103 +1,94 @@
 # Deploy — AltafuIA Auditoría
 
-Stack actual del VPS (46.202.171.141):
-- Dokploy + Traefik
-- Supabase self-hosted: `automation-supabase-c607de-46-202-171-141.traefik.me`
-- App Next.js: `altafuia.filmmakerstudio.com` (a configurar)
+App Next.js 14, **sin base de datos propia**. Persistencia de leads en
+**Notion** vía API. Audit personalizado se computa client-side.
 
-## 1 · Migración Supabase
+## Arquitectura
 
-Pegar el contenido de `supabase/migrations/0001_init.sql` en:
-
-**Supabase Studio → SQL Editor → New query → Run**
-
-Studio URL: `http://automation-supabase-c607de-46-202-171-141.traefik.me`  
-Login: `filmmaiker` / `nsexksoisk5knw7ajag8ubfyljqgceur`
-
-Verificación post-migración:
-
-```sql
-select table_name from information_schema.tables
-where table_schema = 'public'
-order by table_name;
--- Debe devolver: email_events, leads,
--- quiz_responses_business, quiz_responses_individual
+```
+[Browser]
+  → /auditoria/email (form)
+  → POST /api/lead { stage:"captured" } → Notion (fire-and-forget)
+  → /auditoria/perfil → /auditoria/quiz/{individual|business}
+  → POST /api/lead { stage:"completed", level, summary } → Notion
+  → /auditoria/resultado (audit personalizado, render local)
 ```
 
-## 2 · App Next.js en Dokploy
+Si las env vars de Notion faltan o el endpoint falla, el funnel sigue
+funcionando perfecto — solo no se persiste el lead.
 
-**Crear nuevo servicio:**
-- Tipo: Application → Github
+## 1 · Setup de Notion (una sola vez)
+
+### 1.1 Crear la database
+
+1. En Notion, creá una página nueva: **"AltafuIA · Leads"**
+2. Dentro, agregá un database **full-page** (`/database` → "Database — Full page")
+3. Configurá estas propiedades **con estos nombres exactos** (case-sensitive):
+
+| Property | Tipo |
+|----------|------|
+| `Name` | Title (viene por defecto) |
+| `Email` | Email |
+| `Status` | Select — opciones: `Captured`, `Completed` |
+| `Type` | Select — opciones: `Individual`, `Empresa` |
+| `Level` | Text |
+| `Source` | Text |
+| `UTM` | Text |
+| `Summary` | Text |
+
+### 1.2 Crear la integración
+
+1. Andá a https://www.notion.so/my-integrations
+2. Click **"+ New integration"**
+3. Name: `AltafuIA Funnel` · Type: **Internal** · Workspace: el tuyo
+4. **Copiá el "Internal Integration Secret"** (empieza con `secret_` o `ntn_`) — ese es tu `NOTION_TOKEN`
+
+### 1.3 Conectar la integración a la database
+
+1. Abrí la database "AltafuIA · Leads" que creaste
+2. Top-right, click **`⋯`** menu → **"+ Add connections"** (o "Connections")
+3. Buscá `AltafuIA Funnel` y aprobalo
+
+### 1.4 Sacar el database ID
+
+1. En la database abierta, copiá la URL del browser
+2. La URL se ve así: `https://www.notion.so/<workspace>/<DATABASE_ID>?v=<view_id>...`
+3. **El DATABASE_ID es la cadena de 32 caracteres hex** entre el workspace y `?v=`
+4. Ese es tu `NOTION_LEADS_DATABASE_ID`
+
+## 2 · Variables de entorno en Antigravity / Dokploy
+
+```
+NOTION_API_KEY=ntn_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NOTION_DATABASE_ID=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+NEXT_PUBLIC_SITE_URL=https://tu-dominio-publico.com
+NODE_ENV=production
+```
+
+## 3 · Deploy
+
 - Repo: `filmmaikerstudio/filmmaiker_form`
-- Branch: `claude/qr-audit-funnel-q07Ed` (o la que mergeés a main)
+- Branch: `claude/qr-audit-funnel-q07Ed`
 - Build: `pnpm install --frozen-lockfile && pnpm build`
 - Start: `pnpm start`
 - Port: `3000`
 
-**Environment variables (pestaña Environment en Dokploy):**
+## 4 · Verificación post-deploy
 
-```
-SUPABASE_URL=http://automation-supabase-c607de-46-202-171-141.traefik.me
-SUPABASE_SERVICE_ROLE_KEY=<copiar SERVICE_ROLE_KEY del .env de Supabase en Dokploy>
-RESEND_API_KEY=<crear en resend.com>
-RESEND_FROM_EMAIL=info@filmmakerstudio.com
-NEXT_PUBLIC_SITE_URL=https://altafuia.filmmakerstudio.com
-NODE_ENV=production
-```
+1. Abrí la URL pública del deploy
+2. Andá a `/auditoria/email`, llená nombre + email + apretá CTA
+3. Verificá que **navegás inmediatamente** a `/auditoria/perfil`
+4. Completá un quiz hasta `/auditoria/resultado`
+5. Abrí Notion → tu database "AltafuIA · Leads" → debería haber 2 filas:
+   - Una con `Status: Captured` (al dar email)
+   - Una con `Status: Completed`, `Type`, `Level`, `Summary` (al terminar quiz)
 
-**Domain (pestaña Domains):**
-- Host: `altafuia.filmmakerstudio.com`
-- Port: `3000`
-- HTTPS: enabled (Let's Encrypt automático)
+Si faltan filas pero el funnel anduvo igual, revisá los logs del deploy
+para ver el error de Notion (probablemente: token mal copiado, integración
+sin conexión a la DB, o property name mal escrito).
 
-**DNS** (Hostinger):
-- Tipo `A`, name `altafuia`, apunta a `46.202.171.141`, TTL 14400 ✅ (ya creado)
+## 5 · Pendientes
 
-## 3 · Verificación post-deploy
-
-```bash
-curl -I https://altafuia.filmmakerstudio.com/
-# 200 OK
-
-curl -s https://altafuia.filmmakerstudio.com/api/leads -X POST \
-  -H "content-type: application/json" \
-  -d '{"email":"test@test.com","name":"Test"}'
-# {"lead":{"id":"...","email":"test@test.com","status":"captured"}}
-```
-
-Si las dos pasan, el funnel completo está vivo:
-- `/` Landing
-- `/auditoria/email`
-- `/auditoria/perfil`
-- `/auditoria/quiz/individual` ó `/auditoria/quiz/business`
-- `/auditoria/resultado`
-
-## 4 · Rotación de credenciales (CRÍTICO)
-
-Las credenciales del VPS y Supabase se compartieron en chat — rotar:
-
-```bash
-# En el VPS
-passwd  # nuevo root password
-# Configurar SSH key + deshabilitar PasswordAuthentication en /etc/ssh/sshd_config
-```
-
-API key de Hostinger: regenerar en panel de Hostinger.  
-JWT secret de Supabase: si querés rotar también, requiere regenerar ANON_KEY y SERVICE_ROLE_KEY (Dokploy → Supabase env vars), y actualizar la app.
-
-## 4.bis · Antigravity / cualquier deploy sin env vars
-
-El funnel está diseñado para ser **resiliente**:
-
-- Si faltan `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY` en el entorno, o si la migración SQL no se aplicó, las APIs `/api/leads` y `/api/quiz` devuelven igual `200` y dejan que el funnel avance.
-- La auditoría se **computa en el cliente** (`lib/scoring.ts`), así que el resultado es siempre visible aunque Supabase esté down.
-- El cliente guarda `altafuia_lead_email`, `altafuia_lead_name` y `altafuia_result` en `localStorage` para sostener el flujo sin backend.
-
-Para que **además** se persistan los leads y respuestas, configurar las env vars en el panel del deploy (Antigravity / Dokploy / etc.) y aplicar la migración (sección 1).
-
-## 5 · Pendientes Sprint 3+
-
-- LLM auditor (Anthropic) → reemplaza templates estáticos por audit personalizado en streaming
-- PDF export (`@react-pdf/renderer`)
-- Resend sequences (B2C 6 emails / B2B 4 emails + Slack alert)
-- QR real apuntando a `https://altafuia.filmmakerstudio.com?utm_source=qr&utm_medium=event&utm_campaign=altafuia2026`
+- Sprint 3: LLM auditor (Anthropic) → audit personalizado en streaming
+- PDF export del resultado
+- QR real apuntando al deploy con UTMs

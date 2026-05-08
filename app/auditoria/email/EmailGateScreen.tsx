@@ -34,22 +34,44 @@ export function EmailGateScreen() {
     if (!valid) return;
 
     setPending(true);
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name.trim();
+    const utm_source = params.get("utm_source");
+    const utm_medium = params.get("utm_medium");
+    const utm_campaign = params.get("utm_campaign");
 
     try {
-      localStorage.setItem("altafuia_lead_email", email.trim().toLowerCase());
-      localStorage.setItem("altafuia_lead_name", name.trim());
+      localStorage.setItem("altafuia_lead_email", cleanEmail);
+      localStorage.setItem("altafuia_lead_name", cleanName);
       if (source) localStorage.setItem("altafuia_lead_source", source);
-      const utm = {
-        source: params.get("utm_source"),
-        medium: params.get("utm_medium"),
-        campaign: params.get("utm_campaign"),
-      };
-      if (utm.source || utm.medium || utm.campaign) {
-        localStorage.setItem("altafuia_utm", JSON.stringify(utm));
+      if (utm_source || utm_medium || utm_campaign) {
+        localStorage.setItem(
+          "altafuia_utm",
+          JSON.stringify({ utm_source, utm_medium, utm_campaign }),
+        );
       }
     } catch {}
 
-    // Navegación nativa del browser — full page load, sin client router.
+    // Fire-and-forget POST a Notion via /api/lead. keepalive sobrevive
+    // la navegación y nunca bloquea router.
+    try {
+      void fetch("/api/lead", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        keepalive: true,
+        body: JSON.stringify({
+          email: cleanEmail,
+          name: cleanName,
+          stage: "captured",
+          source: source || null,
+          utm_source,
+          utm_medium,
+          utm_campaign,
+        }),
+      }).catch(() => {});
+    } catch {}
+
+    // Navegación inmediata, full page load — imposible de bloquear.
     window.location.assign("/auditoria/perfil");
   }
 

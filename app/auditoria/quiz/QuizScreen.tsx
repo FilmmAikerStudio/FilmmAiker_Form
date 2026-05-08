@@ -91,6 +91,8 @@ export function QuizScreen({ type }: Props) {
 
   function finish() {
     let payload: object;
+    let level: string | null = null;
+    let summary: string | null = null;
 
     if (type === "individual") {
       const b2cAnswers: B2CAnswers = {
@@ -101,7 +103,10 @@ export function QuizScreen({ type }: Props) {
         q5: (answers[4] as number) ?? 0,
         q6_goal: (answers[5] as number) ?? 1,
       };
-      payload = { type: "individual", b2c: scoreB2C(b2cAnswers), lang };
+      const b2c = scoreB2C(b2cAnswers);
+      payload = { type: "individual", b2c, lang };
+      level = `Nivel ${b2c.currentLevel}`;
+      summary = `Goal: ${b2c.goalLevel} · 90d: ${b2c.realistic90Days} · Flag: ${b2c.flag}`;
     } else {
       const q3opts = QB2B[2].opts;
       const q4opts = QB2B[3].opts;
@@ -120,12 +125,46 @@ export function QuizScreen({ type }: Props) {
         q7: (answers[6] as string) ?? "",
         q8: (answers[7] as string) ?? "",
       };
-      payload = { type: "business", b2b: scoreB2B(b2bAnswers), lang };
+      const b2b = scoreB2B(b2bAnswers);
+      payload = { type: "business", b2b, lang };
+      level = `Cuadrante ${b2b.quadrant}`;
+      summary = `Org: ${b2b.orgType}/${b2b.orgSize} · TOC: ${b2b.tocMaturity} · IA: ${b2b.aiMaturity} · Bottleneck: ${b2b.likelyBottleneckKey}`;
     }
 
     try {
       localStorage.setItem("altafuia_result", JSON.stringify(payload));
     } catch {}
+
+    // Fire-and-forget a Notion: lead completado, con tipo+nivel+resumen.
+    try {
+      const email = localStorage.getItem("altafuia_lead_email") ?? "";
+      const name = localStorage.getItem("altafuia_lead_name") ?? "";
+      const source = localStorage.getItem("altafuia_lead_source") ?? null;
+      let utm: Record<string, string | null> = {};
+      try {
+        utm = JSON.parse(localStorage.getItem("altafuia_utm") ?? "{}");
+      } catch {}
+      if (email && name) {
+        void fetch("/api/lead", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          keepalive: true,
+          body: JSON.stringify({
+            email,
+            name,
+            stage: "completed",
+            source,
+            type,
+            level,
+            summary,
+            utm_source: utm.utm_source ?? null,
+            utm_medium: utm.utm_medium ?? null,
+            utm_campaign: utm.utm_campaign ?? null,
+          }),
+        }).catch(() => {});
+      }
+    } catch {}
+
     window.location.assign("/auditoria/resultado");
   }
 
