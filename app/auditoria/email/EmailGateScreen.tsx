@@ -19,7 +19,6 @@ export function EmailGateScreen() {
   const [source, setSource] = useState<string>("");
   const [honeypot, setHoneypot] = useState("");
   const [touched, setTouched] = useState(false);
-  const [pending, setPending] = useState(false);
 
   const emailValid = EMAIL_RE.test(email);
   const nameValid = name.trim().length >= 1;
@@ -27,13 +26,15 @@ export function EmailGateScreen() {
 
   const sourceOptions = copy.email.sourceOptions[lang];
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setTouched(true);
-    if (honeypot.length > 0) return;
-    if (!valid) return;
+  function go(event?: React.SyntheticEvent) {
+    if (event) event.preventDefault();
 
-    setPending(true);
+    if (honeypot.length > 0) return;
+    if (!valid) {
+      setTouched(true);
+      return;
+    }
+
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = name.trim();
     const utm_source = params.get("utm_source");
@@ -52,27 +53,33 @@ export function EmailGateScreen() {
       }
     } catch {}
 
-    // Fire-and-forget POST a Notion via /api/lead. keepalive sobrevive
-    // la navegación y nunca bloquea router.
+    // sendBeacon: la API nativa diseñada para "mandá esto sin bloquear
+    // y sobreviví la navegación". Nunca puede colgar la UI.
     try {
-      void fetch("/api/lead", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        keepalive: true,
-        body: JSON.stringify({
-          email: cleanEmail,
-          name: cleanName,
-          stage: "captured",
-          source: source || null,
-          utm_source,
-          utm_medium,
-          utm_campaign,
-        }),
-      }).catch(() => {});
+      const payload = JSON.stringify({
+        email: cleanEmail,
+        name: cleanName,
+        stage: "captured",
+        source: source || null,
+        utm_source,
+        utm_medium,
+        utm_campaign,
+      });
+      if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+        const blob = new Blob([payload], { type: "application/json" });
+        navigator.sendBeacon("/api/lead", blob);
+      } else {
+        void fetch("/api/lead", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          keepalive: true,
+          body: payload,
+        }).catch(() => {});
+      }
     } catch {}
 
-    // Navegación inmediata, full page load — imposible de bloquear.
-    window.location.assign("/auditoria/perfil");
+    // Navegación dura del browser — equivalente a hacer click en un <a>.
+    window.location.href = "/auditoria/perfil";
   }
 
   return (
@@ -122,7 +129,7 @@ export function EmailGateScreen() {
           {t(copy.email.sub, lang)}
         </p>
 
-        <form onSubmit={submit} className="flex flex-col gap-5" noValidate>
+        <form onSubmit={go} className="flex flex-col gap-5" noValidate>
           {/* Nombre */}
           <div>
             <label htmlFor="name" className="label-sm mb-2 block">
@@ -237,14 +244,11 @@ export function EmailGateScreen() {
           <div className="mt-2">
             <button
               type="submit"
+              onClick={go}
               className="btn-primary w-full max-w-[380px]"
-              disabled={pending || !valid}
+              disabled={!valid}
             >
-              {pending
-                ? lang === "es"
-                  ? "Guardando…"
-                  : "Saving…"
-                : t(copy.email.cta, lang)}
+              {t(copy.email.cta, lang)}
               <svg
                 width={16}
                 height={12}

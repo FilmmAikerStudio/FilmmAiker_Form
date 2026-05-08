@@ -135,7 +135,7 @@ export function QuizScreen({ type }: Props) {
       localStorage.setItem("altafuia_result", JSON.stringify(payload));
     } catch {}
 
-    // Fire-and-forget a Notion: lead completado, con tipo+nivel+resumen.
+    // sendBeacon a Notion con el resultado completado.
     try {
       const email = localStorage.getItem("altafuia_lead_email") ?? "";
       const name = localStorage.getItem("altafuia_lead_name") ?? "";
@@ -145,27 +145,33 @@ export function QuizScreen({ type }: Props) {
         utm = JSON.parse(localStorage.getItem("altafuia_utm") ?? "{}");
       } catch {}
       if (email && name) {
-        void fetch("/api/lead", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          keepalive: true,
-          body: JSON.stringify({
-            email,
-            name,
-            stage: "completed",
-            source,
-            type,
-            level,
-            summary,
-            utm_source: utm.utm_source ?? null,
-            utm_medium: utm.utm_medium ?? null,
-            utm_campaign: utm.utm_campaign ?? null,
-          }),
-        }).catch(() => {});
+        const body = JSON.stringify({
+          email,
+          name,
+          stage: "completed",
+          source,
+          type,
+          level,
+          summary,
+          utm_source: utm.utm_source ?? null,
+          utm_medium: utm.utm_medium ?? null,
+          utm_campaign: utm.utm_campaign ?? null,
+        });
+        if (typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function") {
+          const blob = new Blob([body], { type: "application/json" });
+          navigator.sendBeacon("/api/lead", blob);
+        } else {
+          void fetch("/api/lead", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            keepalive: true,
+            body,
+          }).catch(() => {});
+        }
       }
     } catch {}
 
-    window.location.assign("/auditoria/resultado");
+    window.location.href = "/auditoria/resultado";
   }
 
   const days = lang === "es" ? DAYS_ES : DAYS_EN;
